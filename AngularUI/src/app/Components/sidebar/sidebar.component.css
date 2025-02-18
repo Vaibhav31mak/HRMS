@@ -28,7 +28,7 @@ body {
 }
 
 .sidebar .logo_details {
-  height: 60px;
+  height: 120px;
   display: flex;
   align-items: center;
   position: relative;
@@ -45,6 +45,12 @@ body {
   font-weight: 600;
   opacity: 0;
   transition: all 0.5s ease;
+}
+
+img .img-fluid {
+  display: block;
+  width: 90%;
+  object-fit: contain;
 }
 
 .sidebar.open .logo_details .icon,
@@ -69,7 +75,7 @@ body {
 
 .sidebar i {
   color: var(--color-white);
-  height: 60px;
+  height: 120px;
   line-height: 60px;
   min-width: 50px;
   font-size: 25px;

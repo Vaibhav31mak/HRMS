@@ -28,7 +28,8 @@ body {
       rgba(68, 180, 221, 0.7),
       rgba(8, 28, 57, 0.8)
     ),
-    url("assets/Human-resources.jpg");
+    /* url("assets/Human-resources.jpg"); */
+    url("assets/suits-inspired.jpg");
 
   background-size: cover;
   background-position: top;
