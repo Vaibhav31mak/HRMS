@@ -20,7 +20,6 @@ namespace WebAPI.Controllers
         private IDaysOffRepo daysOffRepo;
         private IWeeklyDaysOff weeklyDaysOffRepo;
 
-
         public AttendenceController(IAttendence attendenceRepo, IEmployeeRepo employeeRepo, IMapper mapper, IDaysOffRepo daysOffRepo, IWeeklyDaysOff weeklyDaysOffRepo)
         {
             this.attendenceRepo = attendenceRepo;
