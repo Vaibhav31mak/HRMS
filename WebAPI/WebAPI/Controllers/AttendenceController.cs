@@ -1,12 +1,16 @@
 ﻿using AutoMapper;
+using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using WebAPI.Constants;
 using WebAPI.DTOs;
 using WebAPI.Extensions;
 using WebAPI.Helpers;
 using WebAPI.Interfaces;
 using WebAPI.Models;
+using WebAPI.Repositories;
+using static WebAPI.Constants.Permissions;
 
 namespace WebAPI.Controllers
 {
@@ -113,6 +117,102 @@ namespace WebAPI.Controllers
 
 
             return CreatedAtAction("GetDayByEmpId", new { empId = attendence.EmpId, date = attendence.Day }, attendanceDTO);
+        }
+
+        [Authorize(Permissions.Attendance.create)]
+        [HttpPost("AddExcel")]
+        public ActionResult AddExcel(IFormFile file)
+        {
+
+            //convert excel to DataTable
+            if (file == null || file.Length == 0)
+            {
+                return null;
+            }
+            DataTable dataTable = new DataTable();
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            using (var stream = file.OpenReadStream())
+            {
+                var excelData = new List<List<object>>();
+                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                {
+                    var resultDataset = reader.AsDataSet(new ExcelDataSetConfiguration
+                    {
+                        FilterSheet = (tableReader, sheetIndex) => true,
+                        UseColumnDataType = true,
+
+                        ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                        {
+                            UseHeaderRow = true,
+                            //filter columns
+                            FilterColumn = (rowReader, columnIndex) =>
+                            {
+                                return columnIndex == 0 || columnIndex == 1 || columnIndex == 2 || columnIndex == 3 || columnIndex == 4;
+                            }
+                        }
+                    });
+
+                    dataTable = resultDataset.Tables[0];
+                }
+            }
+
+            List<DaysOff> daysOff = daysOffRepo.GetAll();
+            WeeklyDaysOff weeklyDays = weeklyDaysOffRepo.Get();
+            var employeesDeparture = employeeRepo.GetAll().ToDictionary(e=>e.Id, e=>e.Departure);
+            var employeesArrival = employeeRepo.GetAll().ToDictionary(e => e.Id, e => e.Arrival);
+
+            var employeesInDatabase = employeesArrival.Keys.ToList();
+
+            //convert to attendances
+            foreach (DataRow row in dataTable.Rows)
+            {
+                Attendence attendence = new Attendence
+                {
+                    EmpId = Convert.ToInt32(row["empid"]),
+                    Day = DateOnly.FromDateTime(Convert.ToDateTime(row["day"])),
+                    Arrival = row["Arrival"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Arrival"])),
+                    Departure = row["Departure"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Departure"])),
+                    Status = (AttendenceStatus)Enum.Parse(typeof(AttendenceStatus), row["status"].ToString())
+                };
+
+                if (!employeesInDatabase.Contains(attendence.EmpId))
+                    continue;
+
+                if(attendenceRepo.GetDayByEmpId(attendence.EmpId, attendence.Day) != null)
+                    return BadRequest("Attendance for this employee already added!");
+
+                //TODO: Add Holiday Work Logic
+
+                //check for overtime
+                var overtime = attendence.Departure.HasValue ? (int)attendence.Departure.Value.Hour - employeesDeparture[attendence.EmpId].Hour : 0;
+                var latetime = attendence.Arrival.HasValue ? (int)attendence.Arrival.Value.Hour - employeesArrival[attendence.EmpId].Hour : 0;
+                attendence.LatetimeInHours = 0;
+                attendence.OvertimeInHours = 0;
+
+                if (overtime < 0)
+                {
+                    attendence.LatetimeInHours += overtime * -1;
+                }
+                else
+                {
+                    attendence.OvertimeInHours += overtime;
+                }
+                if (latetime < 0)
+                {
+                    attendence.OvertimeInHours += latetime * -1;
+                }
+                else
+                {
+                    attendence.LatetimeInHours += latetime;
+                }
+
+                attendenceRepo.Add(attendence);
+            }
+
+            attendenceRepo.Save();
+
+            return Ok("Successful Update");
         }
 
         [Authorize(Permissions.Attendance.edit)]
