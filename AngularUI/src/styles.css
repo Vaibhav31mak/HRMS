@@ -8,8 +8,8 @@
 
 :root {
   --light: white;
-  --dark: #155a7b;
-  --medium: #a8d7ed;
+  --dark: #000000;
+  --medium: #383b3d;
 
   /* sidebar */
   --color-white: #fff;
@@ -22,11 +22,12 @@ html {
 }
 body {
   margin: 0;
-
+  padding: 0;
+  /* backdrop-filter: blur(5px); */
   background-image: linear-gradient(
       to right,
-      rgba(68, 180, 221, 0.7),
-      rgba(8, 28, 57, 0.8)
+      rgba(25, 32, 39, 0.655),
+      rgba(17, 23, 19, 0.785)
     ),
     /* url("assets/Human-resources.jpg"); */
     url("assets/suits-inspired.jpg");
