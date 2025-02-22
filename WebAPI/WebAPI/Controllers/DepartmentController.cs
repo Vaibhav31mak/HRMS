@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.DTOs;
 using WebAPI.Interfaces;
@@ -9,16 +8,18 @@ using WebAPI.Models;
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+    [Authorize(Roles = "SuperAdmin")]
     [Authorize]
     public class DepartmentController : ControllerBase
     {
-        private IDepartmentRepo departmentRepo;
-        private IMapper mapper;
+        private readonly IDepartmentRepo departmentRepo;
+        private readonly IEmployeeRepo employeeRepo;
+        private readonly IMapper mapper;
 
-        public DepartmentController(IDepartmentRepo departmentRepo, IMapper mapper)
+        public DepartmentController(IDepartmentRepo departmentRepo, IEmployeeRepo employeeRepo, IMapper mapper)
         {
             this.departmentRepo = departmentRepo;
+            this.employeeRepo = employeeRepo;
             this.mapper = mapper;
         }
 
@@ -31,17 +32,10 @@ namespace WebAPI.Controllers
                 return Unauthorized();
             }
 
-            List<DepartmentDTO> departmentDTOs = new List<DepartmentDTO>();
-
-            foreach (var dept in departments)
-            {
-                DepartmentDTO deptDTO = mapper.Map<DepartmentDTO>(dept);
-
-                departmentDTOs.Add(deptDTO);
-            }
-
+            List<DepartmentDTO> departmentDTOs = mapper.Map<List<DepartmentDTO>>(departments);
             return Ok(departmentDTOs);
         }
+
         [HttpGet("{name}")]
         public IActionResult GetByName(string name)
         {
@@ -52,8 +46,53 @@ namespace WebAPI.Controllers
             }
 
             DepartmentDTO departmentDTO = mapper.Map<DepartmentDTO>(department);
-
             return Ok(departmentDTO);
+        }
+
+        [HttpPost]
+        public IActionResult Create([FromBody] DepartmentDTO departmentDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            Department department = mapper.Map<Department>(departmentDTO);
+            departmentRepo.Create(department);
+            return Ok("Department created successfully");
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, [FromBody] DepartmentDTO departmentDTO)
+        {
+            Department department = departmentRepo.GetById(id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+
+            department.Name = departmentDTO.Name;
+            departmentRepo.Update(department);
+            return Ok("Department updated successfully");
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            Department department = departmentRepo.GetById(id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+
+            var employees = employeeRepo.GetByDepartmentId(id);
+            foreach (var employee in employees)
+            {
+                employeeRepo.Delete(employee.Id);
+            }
+
+            departmentRepo.Delete(department);
+            return Ok("Department and associated employees deleted successfully");
         }
     }
 }

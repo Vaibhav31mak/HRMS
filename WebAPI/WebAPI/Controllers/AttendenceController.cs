@@ -56,7 +56,7 @@ namespace WebAPI.Controllers
             WeeklyDaysOff weeklyDays = weeklyDaysOffRepo.Get();
             if (daysOff != null)
                 return BadRequest("This is an Official day off");
-
+                
             int dayIndex = (int)attendanceDTO.Day.DayOfWeek;
 
             if (weeklyDays != null && weeklyDays.Days.Contains((DaysName)dayIndex))
