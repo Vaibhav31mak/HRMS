@@ -36,6 +36,8 @@ import { UpdateRoleComponent } from './Components/update-role/update-role.compon
 import { AddRoleComponent } from './Components/add-role/add-role.component';
 import { SidebarComponent } from './Components/sidebar/sidebar.component';
 import { UsersComponent } from './Components/users/users.component';
+import { AddDepartmentComponent } from './Components/add-department/add-department.component';
+import { DisplayDepartmentComponent } from './Components/display-department/display-department.component';
 
 @NgModule({
   declarations: [
@@ -48,10 +50,12 @@ import { UsersComponent } from './Components/users/users.component';
     OfficalDaysComponent,
     AddEmployeeComponent,
     DisplayEmployeeComponent,
+    DisplayDepartmentComponent,
     UpdateEmployeeComponent,
     OrganizationSettingsComponent,
     FilterPipe,
     AddAttendanceComponent,
+    AddDepartmentComponent,
     RolesComponent,
     UpdateRoleComponent,
     AddRoleComponent,
@@ -67,6 +71,7 @@ import { UsersComponent } from './Components/users/users.component';
     HttpClientModule,
     NgxPaginationModule,
     BrowserAnimationsModule,
+
     ToastrModule.forRoot({
       timeOut: 3000, // Toast disappears after 3 seconds
       progressBar: true,

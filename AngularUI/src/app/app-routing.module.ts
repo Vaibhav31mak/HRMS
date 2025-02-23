@@ -18,6 +18,8 @@ import { UpdateRoleComponent } from './Components/update-role/update-role.compon
 import { AddRoleComponent } from './Components/add-role/add-role.component';
 import { SidebarComponent } from './Components/sidebar/sidebar.component';
 import { UsersComponent } from './Components/users/users.component';
+import { DisplayDepartmentComponent } from './Components/display-department/display-department.component';
+import { AddDepartmentComponent } from './Components/add-department/add-department.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -53,6 +55,9 @@ const routes: Routes = [
       { path: 'roles', component: RolesComponent },
       { path: 'roles/update', component: UpdateRoleComponent },
       { path: 'roles/add', component: AddRoleComponent },
+      {path: 'department/display', component: DisplayDepartmentComponent},
+      {path: 'department/add', component: AddDepartmentComponent}
+      
     ],
   },
 ];
