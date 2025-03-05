@@ -94,10 +94,12 @@ export class OrganizationSettingsComponent implements OnInit {
   }
 
   onSubmit(): void {
+
     this.organization
       .UpdateOrganization(this.settings as IOrganizationSettings)
       .subscribe(
         (response) => {
+          console.log(this.settings)
           this.toastr.success('Successfully Updated');
 
           this.getSettings();

@@ -10,6 +10,10 @@ namespace WebAPI.Repositories
         {
             this.dBContext = dBContext;
         }
+        public List<Employee> GetByDepartmentId(int departmentId)
+        {
+            return dBContext.Employees.Where(e => e.DeptId == departmentId).ToList();
+        }
         public List<Employee> GetAll()
         {
             return dBContext.Employees.ToList();

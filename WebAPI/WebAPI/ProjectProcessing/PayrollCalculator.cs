@@ -1,6 +1,9 @@
-﻿using WebAPI.Constants;
+﻿using Microsoft.Data.SqlClient;
+using System.Data;
+using WebAPI.Constants;
 using WebAPI.Interfaces;
 using WebAPI.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace WebAPI.ProjectProcessing
 {
@@ -15,6 +18,7 @@ namespace WebAPI.ProjectProcessing
         private IAttendence AttendenceRepo;
         private ICommission CommissionRepo;
         private IDeduction DeductionRepo;
+        private readonly IConfiguration _configuration;
 
         private decimal BaseSalary { get; set; }
         private decimal SalaryPerDay { get; set; }
@@ -37,13 +41,13 @@ namespace WebAPI.ProjectProcessing
         private decimal NetSalary;
 
 
-        public PayrollCalculator(IEmployeeRepo EmployeeRepo, IAttendence AttendenceRepo, ICommission CommissionRepo, IDeduction DeductionRepo)
+        public PayrollCalculator(IConfiguration configuration, IEmployeeRepo EmployeeRepo, IAttendence AttendenceRepo, ICommission CommissionRepo, IDeduction DeductionRepo)
         {
+            _configuration = configuration;
             this.EmployeeRepo = EmployeeRepo;
             this.AttendenceRepo = AttendenceRepo;
             this.CommissionRepo = CommissionRepo;
             this.DeductionRepo = DeductionRepo;
-
         }
 
 
@@ -139,103 +143,88 @@ namespace WebAPI.ProjectProcessing
             return latetime.Sum();
         }
 
-
-        public List<Payslip> generatePayslips()
+        public List<Payslip> generatePayslips(DateOnly startDate, DateOnly endDate)
         {
             List<Payslip> result = new List<Payslip>();
-            List<Employee> employees = EmployeeRepo.GetAll();
-            //for (int i = 0; i < EmpIds.Length; i++)
-            foreach(var employee in employees)
+
+            // Define the stored procedure name
+            string storedProcedure = "[dbo].[GetEmployeePayslip]";
+
+            try
             {
-                // TODO: call this
-                //GetEmployeeData(EmpIds[i]);
-                GetEmployeeData(employee);
-                if (currentEmployee == null)
+                string connectionString = _configuration.GetConnectionString("cs");
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    // TODO: raise employee exception here :)
-                }
-                // calculate employee salary
-                
-                // calculate deduction amount
-                if(DeductionRepo.Get().type == Unit.Hour)
-                {
-                    int Hours = DeductionRepo.Get().Hours;
-                    LatenessHoursPay = LatenessHours * Hours * SalaryPerHour;
-                }
-                else
-                {
-                    LatenessHoursPay = LatenessHours * DeductionRepo.Get().Amount;
-                }
-                AbsenceDaysPay = AbsenceDays * SalaryPerDay;
-                TotalDeductions = LatenessHoursPay + AbsenceDaysPay;
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand(storedProcedure, conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
 
-                // total additional amount
-                if (CommissionRepo.Get().type == Unit.Hour)
-                {
-                    int Hours = CommissionRepo.Get().Hours;
-                    OvertimePay = OvertimeHours * Hours * SalaryPerHour;
+                        // Add parameters for the stored procedure
+                        cmd.Parameters.AddWithValue("@st_date", startDate);
+                        cmd.Parameters.AddWithValue("@end_date", endDate);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                // Map the database result to the Payslip object
+                                Payslip payslip = new Payslip
+                                {
+                                    FullName = reader["FullName"].ToString(),
+                                    DepartmentName = reader["DepartmentName"].ToString(),
+                                    BaseSalary = Convert.ToDecimal(reader["BaseSalary"]),
+                                    AttendanceDays = Convert.ToInt32(reader["AttendanceDays"]),
+                                    AbsenceDays = Convert.ToInt32(reader["AbsentDays"]),
+                                    OvertimeHours = Convert.ToInt32(reader["TotalOvertimeHours"]),
+                                    LatenessHours = Convert.ToInt32(reader["TotalLateHours"]),
+                                    TotalAdditional = Convert.ToDecimal(reader["AdditionalPay"]),
+                                    TotalDeduction = Convert.ToDecimal(reader["DeductionPay"]),
+                                    NetSalary = Convert.ToDecimal(reader["CalculatedSalary"])
+                                };
+
+                                result.Add(payslip);
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    OvertimePay = OvertimeHours * CommissionRepo.Get().Amount;
-                }
-                //OvertimePay = OvertimeHours * SalaryPerHour;
-                TotalAdditional = OvertimePay;
-
-                // calculate net salary
-                NetSalary = (BaseSalary + TotalAdditional) - TotalDeductions;
-
-                if(NetSalary < (BaseSalary/3))
-                    NetSalary = (BaseSalary/3);
-
-                // TODO: Fill your class here with data needed.
-                Payslip payslip = new Payslip()
-                {
-                    FullName = currentEmployee.FullName,
-                    DepartmentName = currentEmployee.Department.Name,
-                    BaseSalary = BaseSalary,
-                    AttendanceDays = AttendanceDays,
-                    AbsenceDays = AbsenceDays,
-                    OvertimeHours = OvertimeHours,
-                    LatenessHours = LatenessHours,
-                    TotalAdditional = TotalAdditional,
-                    TotalDeduction = TotalDeductions,
-                    NetSalary = NetSalary
-                };
-                // TODO: result.add(payslip_record);
-                result.Add(payslip);
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions (e.g., log the error)
+                Console.WriteLine($"Error: {ex.Message}");
+                // Optionally, rethrow or handle the exception based on your requirements
             }
 
             return result;
-
         }
 
 
-        //public decimal CalculateInHours(int Hours)
-        //{
-        //    decimal Money;
-        //    Money = Hours * SalaryPerHour;
-        //    return Money;
-        //}
+    //public decimal CalculateInHours(int Hours)
+    //{
+    //    decimal Money;
+    //    Money = Hours * SalaryPerHour;
+    //    return Money;
+    //}
 
 
-        //public decimal CalculateInAmount(decimal Amount)
-        //{
-        //    double ToHours = ConvertAmountToHours(Amount);
-        //    decimal Money;
-        //    Money = (decimal)ToHours * SalaryPerHour;
-        //    return Money;
-        //}
+    //public decimal CalculateInAmount(decimal Amount)
+    //{
+    //    double ToHours = ConvertAmountToHours(Amount);
+    //    decimal Money;
+    //    Money = (decimal)ToHours * SalaryPerHour;
+    //    return Money;
+    //}
 
 
-        //public decimal CalculateAbsentDays(int days)
-        //{
-        //    decimal TotalAbsentMoney;
-        //    TotalAbsentMoney = SalaryPerDay * days;
-        //    return TotalAbsentMoney;
-        //}
+    //public decimal CalculateAbsentDays(int days)
+    //{
+    //    decimal TotalAbsentMoney;
+    //    TotalAbsentMoney = SalaryPerDay * days;
+    //    return TotalAbsentMoney;
+    //}
 
 
 
-    }
+}
 }

@@ -1,0 +1,80 @@
+USE [HRMS]
+GO
+/****** Object:  StoredProcedure [dbo].[GetEmployeePayslip]    Script Date: 23-02-2025 23:18:53 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[GetEmployeePayslip]
+    @st_date varchar (100),
+    @end_date varchar (100)
+AS
+BEGIN
+    -- Common Table Expression (CTE) for Attendance Data
+    WITH AttendanceData AS (
+        SELECT 
+            A.EmpId,
+            E.FullName,
+            D.Name AS DepartmentName,
+            E.BaseSalary,
+            COUNT(A.Day) AS AttendanceDays,
+            SUM(CASE WHEN A.Status = 1 THEN 1 ELSE 0 END) AS AbsentDays,
+            SUM(A.OvertimeInHours) AS TotalOvertimeHours,
+            SUM(A.LatetimeInHours) AS TotalLateHours,
+            DATEDIFF(HOUR, E.Arrival, E.Departure) AS ShiftDuration
+        FROM 
+            Attendences A
+        JOIN 
+            Employees E ON A.EmpId = E.Id 
+        LEFT JOIN
+            Departments D ON E.DeptId = D.Id
+        WHERE 
+            A.Day BETWEEN @st_date AND @end_date
+        GROUP BY 
+            A.EmpId, E.FullName, D.Name, E.BaseSalary, E.Arrival, E.Departure
+    )
+
+    SELECT 
+        EmpId,
+        FullName,
+        DepartmentName,
+        BaseSalary,
+        AttendanceDays,
+        AbsentDays,
+        TotalOvertimeHours,
+        TotalLateHours,
+        ShiftDuration,
+
+        -- Pre-calculate the hourly rate and reuse it
+        ROUND(BaseSalary / (AttendanceDays * ShiftDuration), 2) AS HourlyRate,
+
+        -- Salary Calculation
+		ROUND(BaseSalary+((BaseSalary / (AttendanceDays * ShiftDuration)) * TotalOvertimeHours)-((
+                (BaseSalary / (AttendanceDays * ShiftDuration)) * TotalLateHours
+            ) 
+            + (
+                (BaseSalary / AttendanceDays) * AbsentDays
+            )),2)
+        AS CalculatedSalary,
+
+        -- Additional Pay (Overtime)
+        ROUND(
+            (BaseSalary / (AttendanceDays * ShiftDuration)) * TotalOvertimeHours,
+            2
+        ) AS AdditionalPay,
+
+        -- Deduction Pay (Lateness & Absence)
+        ROUND(
+            (
+                (BaseSalary / (AttendanceDays * ShiftDuration)) * TotalLateHours
+            ) 
+            + (
+                (BaseSalary / AttendanceDays) * AbsentDays
+            ),
+            2
+        ) AS DeductionPay
+
+    FROM 
+        AttendanceData
+		order by EmpId;
+END;

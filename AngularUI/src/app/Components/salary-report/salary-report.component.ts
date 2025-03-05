@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { IMonth } from 'src/app/interfaces/IMonth';
 import { IPaySlip } from 'src/app/interfaces/IPaySlip';
-import { SalaryService } from 'src/app/Services/salary.service';
+import { SalaryService } from 'src/app/services/salary.service';
 import { TimeUtility } from 'src/environments/TimeUtility';
 
 @Component({

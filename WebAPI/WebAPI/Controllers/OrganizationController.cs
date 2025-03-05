@@ -32,7 +32,18 @@ namespace WebAPI.Controllers
             CommissionDTO commissionDTO = organization.CommissionDTO;
             DeductionDTO deductionDTO = organization.DeductionDTO;
             WeeklyDaysDTO weeklyDaysDTO = organization.WeeklyDaysDTO;
-
+            if (organization.WeeklyDaysDTO == null)
+            {
+                return BadRequest("weeklyDaysDTO is null");
+            }
+            if (organization.CommissionDTO == null)
+            {
+                return BadRequest("CommissionDTO is null");
+            }
+            if (organization.DeductionDTO == null)
+            {
+                return BadRequest("DeductionDTO is null");
+            }
             if (commissionDTO.Amount < 0 || commissionDTO.Hours < 0)
                 return BadRequest("Commission data has nagetive numbers");
 

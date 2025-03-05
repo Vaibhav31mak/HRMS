@@ -4,7 +4,11 @@ namespace WebAPI.Interfaces
 {
     public interface IDepartmentRepo
     {
-        public List<Department> GetAll();
-        public Department GetByName(string name);
+        List<Department> GetAll();
+        Department GetByName(string name);
+        Department GetById(int id);
+        void Create(Department department);
+        void Update(Department department);
+        void Delete(Department department);
     }
 }
