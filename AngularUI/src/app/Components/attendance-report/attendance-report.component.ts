@@ -39,6 +39,13 @@ export class AttendanceReportComponent implements OnInit, OnDestroy {
 
   }
 
+  showModal: boolean = false;
+
+  toggleModal(): void {
+    this.showModal = !this.showModal;
+  }
+
+
   getAttendanceReport() {
     if (this.userParams) {
       console.log(this.startDate);

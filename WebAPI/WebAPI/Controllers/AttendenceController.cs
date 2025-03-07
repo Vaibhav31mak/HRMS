@@ -167,20 +167,32 @@ namespace WebAPI.Controllers
             //convert to attendances
             foreach (DataRow row in dataTable.Rows)
             {
-                Attendence attendence = new Attendence
+                Attendence attendence = null;
+                try
                 {
-                    EmpId = Convert.ToInt32(row["empid"]),
-                    Day = DateOnly.FromDateTime(Convert.ToDateTime(row["day"])),
-                    Arrival = row["Arrival"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Arrival"])),
-                    Departure = row["Departure"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Departure"])),
-                    Status = (AttendenceStatus)Enum.Parse(typeof(AttendenceStatus), row["status"].ToString())
-                };
+                    attendence = new Attendence
+                    {
+                        EmpId = Convert.ToInt32(row["empid"]),
+                        Day = DateOnly.FromDateTime(Convert.ToDateTime(row["day"])),
+                        Arrival = row["Arrival"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Arrival"])),
+                        Departure = row["Departure"] == DBNull.Value ? null : TimeOnly.FromDateTime(Convert.ToDateTime(row["Departure"])),
+                        Status = (AttendenceStatus)Enum.Parse(typeof(AttendenceStatus), row["status"].ToString())
+                    };
+                }
+                catch(Exception e)
+                {
+                    return BadRequest(new { message = "Improper Excel Format"});
+                }
 
                 if (!employeesInDatabase.Contains(attendence.EmpId))
                     continue;
 
-                if(attendenceRepo.GetDayByEmpId(attendence.EmpId, attendence.Day) != null)
-                    return BadRequest("Attendance for this employee already added!");
+                if (daysOff.Any(d => d.Date == attendence.Day) || weeklyDays.Days.Contains((DaysName)(int)attendence.Day.DayOfWeek))
+                {
+                    continue; //skip holidays
+                }
+
+
 
                 //TODO: Add Holiday Work Logic
 
@@ -207,12 +219,23 @@ namespace WebAPI.Controllers
                     attendence.LatetimeInHours += latetime;
                 }
 
+                var existingAttendance = attendenceRepo.GetDayByEmpId(attendence.EmpId, attendence.Day);
+                if (existingAttendance != null)
+                {
+                    Console.WriteLine($"--- {attendence.EmpId}, {attendence.Day} -- Updating existing attendance");
+
+                    existingAttendance.Arrival = attendence.Arrival;
+                    existingAttendance.Departure = attendence.Departure;
+                    existingAttendance.Status = attendence.Status;
+                    attendenceRepo.Delete(attendence.EmpId, attendence.Day);
+                }
+
                 attendenceRepo.Add(attendence);
             }
 
             attendenceRepo.Save();
 
-            return Ok("Successful Update");
+            return Ok();
         }
 
         [Authorize(Permissions.Attendance.edit)]

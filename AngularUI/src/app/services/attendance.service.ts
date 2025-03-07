@@ -24,12 +24,10 @@ export class AttendanceService {
     );
   }
 
-  // these params are optional because we have default values
   getAll(userParams: UserParams) {
 
     let params = new HttpParams();
 
-    // append to http params
     if (userParams.pageNumber && userParams.pageSize) {
       params = params.append("pageSize", userParams.pageSize);
       params = params.append("pageNumber", userParams.pageNumber);
@@ -67,6 +65,13 @@ export class AttendanceService {
     return this.http.put<IAttendence>(
       `${this.baseUrl}/attendence/${id}`,
       record
+    );
+  }
+
+  addExcelAttendance(file: FormData): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/attendence/AddExcel`,
+      file
     );
   }
 

@@ -38,6 +38,7 @@ import { SidebarComponent } from './Components/sidebar/sidebar.component';
 import { UsersComponent } from './Components/users/users.component';
 import { AddDepartmentComponent } from './Components/add-department/add-department.component';
 import { DisplayDepartmentComponent } from './Components/display-department/display-department.component';
+import { AddAttendanceExcelComponent } from './Components/add-attendance-excel/add-attendance-excel.component';
 
 @NgModule({
   declarations: [
@@ -55,6 +56,7 @@ import { DisplayDepartmentComponent } from './Components/display-department/disp
     OrganizationSettingsComponent,
     FilterPipe,
     AddAttendanceComponent,
+    AddAttendanceExcelComponent,
     AddDepartmentComponent,
     RolesComponent,
     UpdateRoleComponent,

@@ -20,6 +20,7 @@ import { SidebarComponent } from './Components/sidebar/sidebar.component';
 import { UsersComponent } from './Components/users/users.component';
 import { DisplayDepartmentComponent } from './Components/display-department/display-department.component';
 import { AddDepartmentComponent } from './Components/add-department/add-department.component';
+import { AddAttendanceExcelComponent } from './Components/add-attendance-excel/add-attendance-excel.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -56,8 +57,8 @@ const routes: Routes = [
       { path: 'roles/update', component: UpdateRoleComponent },
       { path: 'roles/add', component: AddRoleComponent },
       {path: 'department/display', component: DisplayDepartmentComponent},
-      {path: 'department/add', component: AddDepartmentComponent}
-      
+      {path: 'department/add', component: AddDepartmentComponent},
+      {path: 'attendance/addExcel', component: AddAttendanceExcelComponent},
     ],
   },
 ];
