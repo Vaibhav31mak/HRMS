@@ -40,3 +40,14 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+
+.vs/
+*.db
+*.db-shm
+*.db-wal
+*.bin
+*.sqlite
+*.json
+*.pptx
+links.md
